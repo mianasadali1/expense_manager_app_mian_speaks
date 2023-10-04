@@ -18,6 +18,7 @@ import io.realm.RealmResults;
 public class MainViewModel extends AndroidViewModel {
 
     public MutableLiveData<RealmResults<Transaction>> transactions = new MutableLiveData<>();
+    public MutableLiveData<RealmResults<Transaction>> categoriesTransactions = new MutableLiveData<>();
 
     public MutableLiveData<Double> totalIncome = new MutableLiveData<>();
     public MutableLiveData<Double> totalExpense = new MutableLiveData<>();
@@ -31,6 +32,44 @@ public class MainViewModel extends AndroidViewModel {
         Realm.init(application);
         setupDatabase();
     }
+
+    public void getTransactions(Calendar calendar, String type) {
+        this.calendar = calendar;
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+
+        RealmResults<Transaction> newTransactions = null;
+        if(Constants.SELECTED_TAB_STATS == Constants.DAILY) {
+            newTransactions = realm.where(Transaction.class)
+                    .greaterThanOrEqualTo("date", calendar.getTime())
+                    .lessThan("date", new Date(calendar.getTime().getTime() + (24 * 60 * 60 * 1000)))
+                    .equalTo("type", type)
+                    .findAll();
+
+        } else if(Constants.SELECTED_TAB_STATS == Constants.MONTHLY) {
+            calendar.set(Calendar.DAY_OF_MONTH,0);
+
+            Date startTime = calendar.getTime();
+
+
+            calendar.add(Calendar.MONTH,1);
+            Date endTime = calendar.getTime();
+
+            newTransactions = realm.where(Transaction.class)
+                    .greaterThanOrEqualTo("date", startTime)
+                    .lessThan("date", endTime)
+                    .equalTo("type", type)
+                    .findAll();
+        }
+
+
+        categoriesTransactions.setValue(newTransactions);
+
+    }
+
 
     public void getTransactions(Calendar calendar) {
         this.calendar = calendar;
